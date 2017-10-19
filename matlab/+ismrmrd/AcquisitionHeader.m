@@ -603,7 +603,7 @@ classdef AcquisitionHeader < handle
             end
         end
         
-        function flagSet(obj, flag, range)
+        function setFlag(obj, flag, range)
             if nargin < 3
                 range = 1:obj.getNumber;
             end
@@ -646,7 +646,7 @@ classdef AcquisitionHeader < handle
             end
         end
         
-        function flagClearAll(obj, range)
+        function clearAllFlags(obj, range)
             if nargin < 2
                 range = 1:obj.getNumber;
             end

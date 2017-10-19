@@ -30,7 +30,7 @@ classdef ImageHeader < handle
         attribute_string_len = uint32([]);
         
     end
-
+    
     properties(Constant)
         FLAGS = struct( ...
             'IMAGE_IS_NAVIGATION_DATA',  1, ...
@@ -59,7 +59,7 @@ classdef ImageHeader < handle
             'REAL',      uint16(3), ...
             'IMAG',      uint16(4), ...
             'COMPLEX',   uint16(5));
-
+        
     end
     
     methods
@@ -73,7 +73,10 @@ classdef ImageHeader < handle
                     
                 case 1
                     % One argument constructor
-                    if isstruct(arg)
+                    if isa(arg,'ismrmrd.ImageHeader')
+                        % from existing ismrmrd.ImageHeader
+                        obj = arg;
+                    elseif isstruct(arg)
                         % plain struct
                         fromStruct(obj,arg);
                     elseif (length(arg)==1 && ismrmrd.util.isInt(arg)) == 1
@@ -131,13 +134,13 @@ classdef ImageHeader < handle
             hdr.user_int = obj.user_int(:,range);
             hdr.user_float = obj.user_float(:,range);
             hdr.attribute_string_len = obj.attribute_string_len(:,range);
-
-        end        
+            
+        end
         
         function extend(obj,N)
             % Extend with blank header
-
-            range = obj.getNumber + (1:N);            
+            
+            range = obj.getNumber + (1:N);
             obj.version(1,range)                  = zeros(1,N,'uint16');
             obj.flags(1,range)                    = zeros(1,N,'uint64');
             obj.measurement_uid(1,range)          = zeros(1,N,'uint32');
@@ -198,7 +201,7 @@ classdef ImageHeader < handle
             obj.attribute_string_len(Nrange) = hdr.attribute_string_len;
             
         end
-
+        
         function fromStruct(obj, hdr)
             %warning! no error checking
             obj.version = hdr.version;
@@ -228,11 +231,12 @@ classdef ImageHeader < handle
             obj.user_float = hdr.user_float;
             obj.attribute_string_len = hdr.attribute_string_len;
         end
-
+        
         function hdr = toStruct(obj)
             %warning! no error checking
             hdr = struct();
             hdr.version = obj.version;
+            hdr.data_type = obj.data_type;
             hdr.flags = obj.flags;
             hdr.measurement_uid = obj.measurement_uid;
             hdr.matrix_size = obj.matrix_size;
@@ -251,18 +255,17 @@ classdef ImageHeader < handle
             hdr.set = obj.set;
             hdr.acquisition_time_stamp = obj.acquisition_time_stamp;
             hdr.physiology_time_stamp = obj.physiology_time_stamp;
-            hdr.data_type = obj.data_type;
             hdr.image_type = obj.image_type;
             hdr.image_index = obj.image_index;
             hdr.image_series_index = obj.image_series_index;
             hdr.user_int = obj.user_int;
-            hdr.user_float = obj.user_float;       
+            hdr.user_float = obj.user_float;
             hdr.attribute_string_len = obj.attribute_string_len;
         end
         
         function fromBytes(obj, bytearray)
             % Convert from a byte array to an ISMRMRD ImageHeader
-	    % This conforms to the memory layout of the C-struct
+            % This conforms to the memory layout of the C-struct
             if size(bytearray,1) ~= 198
                 error('Wrong number of bytes for ImageHeader.')
             end
@@ -287,7 +290,7 @@ classdef ImageHeader < handle
                 obj.repetition(p)               = typecast(bytearray(105:106,p), 'uint16');
                 obj.set(p)                      = typecast(bytearray(107:108,p), 'uint16');
                 obj.acquisition_time_stamp(p)   = typecast(bytearray(109:112,p), 'uint32');
-                obj.physiology_time_stamp(:,p)  = typecast(bytearray(113:124,p), 'uint32');                                                          
+                obj.physiology_time_stamp(:,p)  = typecast(bytearray(113:124,p), 'uint32');
                 obj.image_type(p)               = typecast(bytearray(125:126,p), 'uint16');
                 obj.image_index(p)              = typecast(bytearray(127:128,p), 'uint16');
                 obj.image_series_index(p)       = typecast(bytearray(129:130,p), 'uint16');
@@ -295,13 +298,13 @@ classdef ImageHeader < handle
                 obj.user_float(:,p)             = typecast(bytearray(163:194,p), 'single');
                 obj.attribute_string_len        = typecast(bytearray(195:198,p), 'uint32');
                 
-            end              
+            end
         end
         
         function bytes = toBytes(obj)
             % Convert an ISMRMRD AcquisitionHeader to a byte array
-	    % This conforms to the memory layout of the C-struct
-
+            % This conforms to the memory layout of the C-struct
+            
             N = obj.getNumber;
             bytes = zeros(198,N,'uint8');
             for p = 1:N
@@ -333,7 +336,7 @@ classdef ImageHeader < handle
                 bytes(off:off+1,p)   = typecast(obj.image_series_index(p)      ,'uint8'); off=off+2;
                 bytes(off:off+31,p)  = typecast(obj.user_int(:,p)              ,'uint8'); off=off+32;
                 bytes(off:off+31,p)  = typecast(obj.user_float(:,p)            ,'uint8'); off=off+32;
-                bytes(off:off+3,p)  = typecast(obj.attribute_string_len(:,p)   ,'uint8'); 
+                bytes(off:off+3,p)  = typecast(obj.attribute_string_len(:,p)   ,'uint8');
                 
             end
         end
@@ -347,100 +350,101 @@ classdef ImageHeader < handle
                 error('Size of flags is not correct.');
             end
             if ((size(obj.measurement_uid,1) ~= 1) || ...
-                (size(obj.measurement_uid,2) ~= N))
+                    (size(obj.measurement_uid,2) ~= N))
                 error('Size of measurement_uid is not correct.');
             end
             if ((size(obj.matrix_size,1) ~= 3) || ...
-                (size(obj.matrix_size,2) ~= N))
+                    (size(obj.matrix_size,2) ~= N))
                 error('Size of matrix_size is not correct.');
             end
             if ((size(obj.field_of_view,1) ~= 3) || ...
-                (size(obj.field_of_view,2) ~= N))
+                    (size(obj.field_of_view,2) ~= N))
                 error('Size of field_of_view is not correct.');
             end
             if ((size(obj.channels,1) ~= 1) || ...
-                (size(obj.channels,2) ~= N))
+                    (size(obj.channels,2) ~= N))
                 error('Size of field_of_view is not correct.');
             end
             if ((size(obj.position,1) ~= 3) || ...
-                (size(obj.position,2) ~= N))    
+                    (size(obj.position,2) ~= N))
                 error('Size of position is not correct.');
             end
             if ((size(obj.read_dir,1) ~= 3) || ...
-                (size(obj.read_dir,2) ~= N))    
+                    (size(obj.read_dir,2) ~= N))
                 error('Size of read_dir is not correct.');
             end
             if ((size(obj.phase_dir,1) ~= 3) || ...
-                (size(obj.phase_dir,2) ~= N))    
+                    (size(obj.phase_dir,2) ~= N))
                 error('Size of phase_dir is not correct.');
             end
             if ((size(obj.slice_dir,1) ~= 3) || ...
-                (size(obj.slice_dir,2) ~= N))    
+                    (size(obj.slice_dir,2) ~= N))
                 error('Size of slice_dir is not correct.');
             end
             if ((size(obj.patient_table_position,1) ~= 3) || ...
-                (size(obj.patient_table_position,2) ~= N))    
+                    (size(obj.patient_table_position,2) ~= N))
                 error('Size of patient_table_position is not correct.');
             end
             if ((size(obj.average,1) ~= 1) || ...
-                (size(obj.average,2) ~= N))    
+                    (size(obj.average,2) ~= N))
                 error('Size of average is not correct.');
             end
             if ((size(obj.slice,1) ~= 1) || ...
-                (size(obj.slice,2) ~= N))    
+                    (size(obj.slice,2) ~= N))
                 error('Size of slice is not correct.');
             end
             if ((size(obj.contrast,1) ~= 1) || ...
-                (size(obj.contrast,2) ~= N))    
+                    (size(obj.contrast,2) ~= N))
                 error('Size of contrast is not correct.');
             end
             if ((size(obj.phase,1) ~= 1) || ...
-                (size(obj.phase,2) ~= N))    
+                    (size(obj.phase,2) ~= N))
                 error('Size of phase is not correct.');
             end
             if ((size(obj.repetition,1) ~= 1) || ...
-                (size(obj.repetition,2) ~= N))    
+                    (size(obj.repetition,2) ~= N))
                 error('Size of repetition is not correct.');
             end
             if ((size(obj.set,1) ~= 1) || ...
-                (size(obj.set,2) ~= N))    
+                    (size(obj.set,2) ~= N))
                 error('Size of set is not correct.');
-            end            
+            end
             if ((size(obj.acquisition_time_stamp,1) ~= 1) || ...
-                (size(obj.acquisition_time_stamp,2) ~= N))
+                    (size(obj.acquisition_time_stamp,2) ~= N))
                 error('Size of acquisition_time_stamp is not correct.');
             end
             if ((size(obj.physiology_time_stamp,1) ~= 3) || ...
-                (size(obj.physiology_time_stamp,2) ~= N))
+                    (size(obj.physiology_time_stamp,2) ~= N))
                 error('Size of physiology_time_stamp is not correct.');
             end
             if ((size(obj.data_type,1) ~= 1) || ...
-                (size(obj.data_type,2) ~= N))
+                    (size(obj.data_type,2) ~= N))
                 error('Size of image_data_type is not correct.');
             end
             if ((size(obj.image_type,1) ~= 1) || ...
-                (size(obj.image_type,2) ~= N))
+                    (size(obj.image_type,2) ~= N))
                 error('Size of image_type is not correct.');
             end
             if ((size(obj.image_index,1) ~= 1) || ...
-                (size(obj.image_index,2) ~= N))
+                    (size(obj.image_index,2) ~= N))
                 error('Size of image_index is not correct.');
             end
             if ((size(obj.image_series_index,1) ~= 1) || ...
-                (size(obj.image_series_index,2) ~= N))
+                    (size(obj.image_series_index,2) ~= N))
                 error('Size of image_series_index is not correct.');
             end
             if ((size(obj.user_int,1) ~= 8) || ...
-                (size(obj.user_int,2) ~= N))    
+                    (size(obj.user_int,2) ~= N))
                 error('Size of user_int is not correct.');
             end
             if ((size(obj.user_float,1) ~= 8) || ...
-                (size(obj.user_float,2) ~= N))    
+                    (size(obj.user_float,2) ~= N))
                 error('Size of user_float is not correct.');
             end
             
             % Fix the type of all the elements
             obj.version = uint16(obj.version);
+            obj.data_type = uint16(obj.data_type);
             obj.flags = uint64(obj.flags);
             obj.measurement_uid = uint32(obj.measurement_uid);
             obj.matrix_size = uint16(obj.matrix_size);
@@ -458,18 +462,17 @@ classdef ImageHeader < handle
             obj.repetition = uint16(obj.repetition);
             obj.set = uint16(obj.set);
             obj.acquisition_time_stamp = uint32(obj.acquisition_time_stamp);
-            obj.physiology_time_stamp = uint32(obj.physiology_time_stamp);            
-            obj.data_type = uint16(obj.data_type);
+            obj.physiology_time_stamp = uint32(obj.physiology_time_stamp);
             obj.image_type = uint16(obj.image_type);
             obj.image_index = uint16(obj.image_index);
             obj.image_series_index = uint16(obj.image_series_index);
             obj.user_int = int32(obj.user_int);
             obj.user_float = single(obj.user_float);
             obj.attribute_string_len = uint32(obj.attribute_string_len);
- 
+            
         end
         
-        function ret = flagIsSet(obj, flag, range)
+        function ret = isFlagSet(obj, flag, range)
             if nargin < 3
                 range = 1:obj.getNumber;
             end
@@ -478,7 +481,7 @@ classdef ImageHeader < handle
             elseif (flag>0)
                 b = uint64(flag);
             else
-                error('Flag is of the wrong type.'); 
+                error('Flag is of the wrong type.');
             end
             bitmask = bitshift(uint64(1),(b-1));
             ret = zeros(size(range));
@@ -487,7 +490,7 @@ classdef ImageHeader < handle
             end
         end
         
-        function flagSet(obj, flag, range)
+        function setFlag(obj, flag, range)
             if nargin < 3
                 range = 1:obj.getNumber;
             end
@@ -496,11 +499,11 @@ classdef ImageHeader < handle
             elseif (flag>0)
                 b = uint64(flag);
             else
-                error('Flag is of the wrong type.'); 
+                error('Flag is of the wrong type.');
             end
             bitmask = bitshift(uint64(1),(b-1));
-
-            alreadyset = obj.flagIsSet(flag,range);
+            
+            alreadyset = obj.isFlagSet(flag,range);
             for p = 1:length(range)
                 if ~alreadyset(p)
                     obj.flags(range(p)) = obj.flags(range(p)) + bitmask;
@@ -508,7 +511,7 @@ classdef ImageHeader < handle
             end
         end
         
-        function flagClear(obj, flag, range)
+        function clearFlag(obj, flag, range)
             if nargin < 3
                 range = 1:obj.getNumber;
             end
@@ -518,18 +521,35 @@ classdef ImageHeader < handle
             elseif (flag>0)
                 b = uint64(flag);
             else
-                error('Flag is of the wrong type.'); 
+                error('Flag is of the wrong type.');
             end
             bitmask = bitshift(uint64(1),(b-1));
             
-            alreadyset = obj.flagIsSet(flag,range);
+            alreadyset = obj.isFlagSet(flag,range);
             for p = 1:length(range)
                 if alreadyset(p)
                     obj.flags(range(p)) = obj.flags(range(p)) - bitmask;
                 end
             end
-                
             
+        end
+        
+        function setImageType(obj, imageType, range)
+            if nargin < 3
+                range = 1:obj.getNumber;
+            end
+            
+            if isa(imageType,'char')
+                b = obj.IMAGE_TYPE.(imageType);
+            elseif (imageType > 0)
+                b = uint16(imageType);
+            else
+                error('Image Type is not one of the allowed ISMRMRD.ImageHeader.IMAGE_TYPE values');
+            end
+            
+            for p = 1:length(range)
+                obj.image_type(range(p)) = b;
+            end
         end
         
     end
