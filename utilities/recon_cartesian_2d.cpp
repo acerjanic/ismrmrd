@@ -101,10 +101,12 @@ int main(int argc, char** argv)
     for (unsigned int i = 0; i < number_of_acquisitions; i++) {
         //Read one acquisition at a time
         d.readAcquisition(i, acq);
-
+		std::cout << "About to copy memory" << std::endl;
         //Copy data, we should probably be more careful here and do more tests....
         for (uint16_t c=0; c<nCoils; c++) {
-            memcpy(&buffer(0,acq.idx().kspace_encode_step_1,c), &acq.data(0, c), sizeof(complex_float_t)*nX);
+	        std::cout << "About to copy memory for coil: " << c << std::endl;
+
+	        memcpy(&buffer(0,acq.idx().kspace_encode_step_1,c), &acq.data(0, c), sizeof(complex_float_t)*nX);
         }
     }
 
@@ -136,7 +138,18 @@ int main(int argc, char** argv)
         fftwf_free(tmp);
 
     }
-
+    
+    //Let's try to read a complex NDArray of the coil sensitivity matrix
+    std::cout << "About to read in csm NDArray" << std::endl;
+    std::vector<size_t> csm_dims;
+    csm_dims.push_back(nX*nY);
+    csm_dims.push_back(nCoils);
+    ISMRMRD::NDArray<complex_float_t> csm;
+    
+    d.readNDArray(std::string("csm"),0,csm);
+    
+    std::cout << "Read in csm NDArray" << std::endl;
+    
     //Allocate an image
     ISMRMRD::Image<float> img_out(r_space.matrixSize.x, r_space.matrixSize.y, 1, 1);
     memset(img_out.getDataPtr(), 0, sizeof(float_t)*r_space.matrixSize.x*r_space.matrixSize.y);

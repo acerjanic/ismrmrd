@@ -1,11 +1,11 @@
 classdef hdf5_datatypes
-% This convenience class defines the HDF5 types used in the
-% ISMRMRD HDF5 file
-
-% The names, types, layout and offsets consistent with that generated
-% by the C API.  See the note at the bottom of the file for how to
-% do this.
-
+    % This convenience class defines the HDF5 types used in the
+    % ISMRMRD HDF5 file
+    
+    % The names, types, layout and offsets consistent with that generated
+    % by the C API.  See the note at the bottom of the file for how to
+    % do this.
+    
     properties
         T_float;
         T_double;
@@ -16,6 +16,21 @@ classdef hdf5_datatypes
         T_EncodingCounters;
         T_AcquisitionHeader;
         T_Acquisition;
+        T_ImageHeader;
+        %T_Image;
+    end
+    
+    
+    properties(Constant)
+        DATA_TYPE = struct( ...
+            'USHORT',   uint16(1), ...
+            'SHORT',    uint16(2), ...
+            'UINT',     uint16(3), ...
+            'INT',      uint16(4), ...
+            'FLOAT',    uint16(5), ...
+            'DOUBLE',   uint16(6), ...
+            'CXFLOAT',  uint16(7), ...
+            'CXDOUBLE', uint16(8));
     end
     
     methods
@@ -30,44 +45,113 @@ classdef hdf5_datatypes
             obj.T_EncodingCounters = ismrmrd.util.hdf5_datatypes.getType_EncodingCounters();
             obj.T_AcquisitionHeader = ismrmrd.util.hdf5_datatypes.getType_AcquisitionHeader();
             obj.T_Acquisition = ismrmrd.util.hdf5_datatypes.getType_Acquisition();
+            obj.T_ImageHeader = ismrmrd.util.hdf5_datatypes.getType_ImageHeader();
+            %obj.T_Image = ismrmrd.util.hdf5_datatypes.getType_Image();
         end
         
     end
-   
+    
     methods (Static)
-
+        function type = getDataType(obj, hdf5Type)
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_ushort));
+                type = obj.DATA_TYPE.USHORT;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_char));
+                type = obj.DATA_TYPE.SHORT;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_double));
+                type = obj.DATA_TYPE.DOUBLE;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_float));
+                type = obj.DATA_TYPE.FLOAT;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_complexdouble));
+                type = obj.DATA_TYPE.CXDOUBLE;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_complexfloat));
+                type = obj.DATA_TYPE.CXFLOAT;
+            end
+            
+            
+        end
+        
+                function type = getH5DataType(obj, hdf5Type)
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_ushort));
+                type = obj.DATA_TYPE.USHORT;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_char));
+                type = obj.DATA_TYPE.SHORT;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_double));
+                type = obj.DATA_TYPE.DOUBLE;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_float));
+                type = obj.DATA_TYPE.FLOAT;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_complexdouble));
+                type = obj.DATA_TYPE.CXDOUBLE;
+            end
+            
+            if(H5T.equal(hdf5Type,ismrmrd.util.hdf5_datatypes.T_complexfloat));
+                type = obj.DATA_TYPE.CXFLOAT;
+            end
+            
+            
+        end
+        function b = getType_int()
+            b = H5T.copy('H5T_NATIVE_INT32');
+        end
+        function b = getType_uint()
+            b = H5T.copy('H5T_NATIVE_UINT32');
+        end
+        
         function b = getType_float()
             b = H5T.copy('H5T_NATIVE_FLOAT');
         end
-
+        
         function b = getType_double()
             b = H5T.copy('H5T_NATIVE_DOUBLE');
         end
-
+        
         function b = getType_char()
             b = H5T.copy('H5T_NATIVE_CHAR');
         end
-
+        
         function b = getType_complexfloat()
             typesize = 2*H5T.get_size('H5T_NATIVE_FLOAT');
             b = H5T.create ('H5T_COMPOUND', typesize);
             H5T.insert (b, 'real', 0, 'H5T_NATIVE_FLOAT');
             H5T.insert (b, 'imag', H5T.get_size('H5T_NATIVE_FLOAT'), 'H5T_NATIVE_FLOAT');
         end
-
+        
         function b = getType_complexdouble()
             b = H5T.create ('H5T_COMPOUND', ...
-                             2*H5T.get_size('H5T_NATIVE_DOUBLE'));
+                2*H5T.get_size('H5T_NATIVE_DOUBLE'));
             H5T.insert (b, 'real', 0, 'H5T_NATIVE_DOUBLE');
             H5T.insert (b, 'imag', H5T.get_size('H5T_NATIVE_DOUBLE'), 'H5T_NATIVE_DOUBLE');
         end
-
+        
         function b = getType_ushort()
             b = H5T.copy('H5T_NATIVE_USHORT');
         end
-
+        
+        function b = getType_short()
+            b = H5T.copy('H5T_NATIVE_SHORT');
+        end
+        
         function b = getType_EncodingCounters()
-
+            
             b = H5T.create ('H5T_COMPOUND', 34);
             H5T.insert(b, 'kspace_encode_step_1', 0, 'H5T_NATIVE_UINT16');
             H5T.insert(b, 'kspace_encode_step_2', 2, 'H5T_NATIVE_UINT16');
@@ -79,9 +163,9 @@ classdef hdf5_datatypes
             H5T.insert(b, 'set', 14, 'H5T_NATIVE_UINT16');
             H5T.insert(b, 'segment', 16, 'H5T_NATIVE_UINT16');
             H5T.insert(b, 'user', 18, H5T.array_create('H5T_NATIVE_UINT16',[8]));
-
+            
         end
-
+        
         function b = getType_AcquisitionHeader()
             b = H5T.create ('H5T_COMPOUND', 340);
             H5T.insert(b, 'version', 0, 'H5T_NATIVE_UINT16');
@@ -109,21 +193,52 @@ classdef hdf5_datatypes
             H5T.insert(b, 'user_int', 276, H5T.array_create('H5T_NATIVE_INT32',[8]));
             H5T.insert(b, 'user_float', 308, H5T.array_create('H5T_NATIVE_FLOAT',[8]));
         end
-
+        
+        function b = getType_ImageHeader()
+            b = H5T.create ('H5T_COMPOUND', 198);
+            H5T.insert(b, 'version', 0, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'data_type', 2, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'flags', 4, 'H5T_NATIVE_UINT64');
+            H5T.insert(b, 'measurement_uid', 12, 'H5T_NATIVE_UINT32');
+            H5T.insert(b, 'matrix_size', 16, H5T.array_create('H5T_NATIVE_UINT16',3));
+            H5T.insert(b, 'field_of_view', 22, H5T.array_create('H5T_NATIVE_FLOAT',3));
+            H5T.insert(b, 'channels', 34, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'position', 36, H5T.array_create('H5T_NATIVE_FLOAT',3));
+            H5T.insert(b, 'read_dir', 48, H5T.array_create('H5T_NATIVE_FLOAT',3));
+            H5T.insert(b, 'phase_dir', 60, H5T.array_create('H5T_NATIVE_FLOAT',3));
+            H5T.insert(b, 'slice_dir', 72, H5T.array_create('H5T_NATIVE_FLOAT',3));
+            H5T.insert(b, 'patient_table_position', 84, H5T.array_create('H5T_NATIVE_FLOAT',3));
+            H5T.insert(b, 'average', 96, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'slice', 98, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'contrast', 100, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'phase', 102, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'repetition', 104, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'set', 106, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'acquisition_time_stamp', 108, 'H5T_NATIVE_UINT32');
+            H5T.insert(b, 'physiology_time_stamp', 112, H5T.array_create('H5T_NATIVE_UINT32',3));
+            H5T.insert(b, 'image_type', 124, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'image_index', 126, 'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'image_series_index', 128,'H5T_NATIVE_UINT16');
+            H5T.insert(b, 'user_int', 130, H5T.array_create('H5T_NATIVE_UINT32',8));
+            H5T.insert(b, 'user_float', 162, H5T.array_create('H5T_NATIVE_FLOAT',8));
+            H5T.insert(b, 'attribute_string_len', 194, 'H5T_NATIVE_UINT32');
+        end
+        
         function b = getType_Acquisition()
-
+            
             head = H5T.copy(ismrmrd.util.hdf5_datatypes.getType_AcquisitionHeader());
             traj = H5T.vlen_create(ismrmrd.util.hdf5_datatypes.getType_float());
             data = H5T.vlen_create(ismrmrd.util.hdf5_datatypes.getType_float());
-
+            
             b = H5T.create ('H5T_COMPOUND', 376);
             H5T.insert(b, 'head', 0, head);
             H5T.insert(b, 'traj', 344, traj);
             H5T.insert(b, 'data', 360, data);
-
+            
         end
+        
     end % Methods (Static)
-
+    
 end
 
 % Generate a dataset using the C utilities and run
