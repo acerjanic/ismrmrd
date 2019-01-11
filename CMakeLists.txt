@@ -35,6 +35,10 @@ if(NOT CMAKE_BUILD_TYPE)
       FORCE)
 endif()
 
+# set required c standard level in a compiler independent manner
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 # compiler flags
 if (WIN32)
     add_definitions(-DWIN32 -D_WIN32 -D_WINDOWS)
@@ -48,7 +52,7 @@ if (WIN32)
     set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "/debug /INCREMENTAL:NO")
     add_definitions(-D__func__=__FUNCTION__)
 else ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 endif ()
 
