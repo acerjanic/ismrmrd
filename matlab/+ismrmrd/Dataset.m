@@ -727,7 +727,17 @@ classdef Dataset
                 
                 dcpl = H5P.create('H5P_DATASET_CREATE');
                 chunk = count;
-                H5P.set_chunk (dcpl, chunk);
+                if (prod(chunk) > 6.25E7) % Trying to set chunk size properly
+                    % If the number of elements in the chunk is more than
+                    % 4GB worth of elements (based on double precision
+                    % variables) then divide up the chunk size by the last dimension.
+                    [~, dimension2divide] = max(chunk);
+                    chunkDivideFactor = ceil(prod(chunk)/6.25E7);
+                    chunk(dimension2divide) = floor(chunk(dimension2divide)/chunkDivideFactor + 1);
+                    H5P.set_chunk (dcpl, chunk); 
+                else % Leave chunk set to the size of the data (ie save data in 1 chunk).
+                    H5P.set_chunk (dcpl, chunk);
+                end
                 data_id = H5D.create(obj.fid, datapath, ...
                     h5type, ...
                     file_space_id, dcpl);
@@ -781,3 +791,4 @@ classdef Dataset
     end
     
 end
+
